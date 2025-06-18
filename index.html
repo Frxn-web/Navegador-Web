@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navegador Web Automático</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px solid #e9ecef;
+        }
+
+        .input-section h2 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        #urlInput {
+            width: 100%;
+            height: 150px;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        #urlInput:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border: 2px solid #dee2e6;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status-section {
+            background: #fff;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .status {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .status.idle { color: #6c757d; }
+        .status.running { color: #28a745; }
+        .status.paused { color: #ffc107; }
+        .status.completed { color: #007bff; }
+
+        .progress-container {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .current-url {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .url-list {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .url-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            border-left: 4px solid transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .url-item.pending {
+            background: #ffffff;
+            border-left-color: #6c757d;
+        }
+
+        .url-item.current {
+            background: #d4edda;
+            border-left-color: #28a745;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        .url-item.completed {
+            background: #d1ecf1;
+            border-left-color: #17a2b8;
+            opacity: 0.7;
+        }
+
+        .url-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .url-status.pending { background: #e9ecef; color: #6c757d; }
+        .url-status.current { background: #d4edda; color: #155724; }
+        .url-status.completed { background: #d1ecf1; color: #0c5460; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .help-text {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border: 1px solid #bee5eb;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            color: #0c5460;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #495057;
+        }
+
+        .info-box li {
+            margin-bottom: 5px;
+        }
+
+        .timer-display {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+            color: #667eea;
+        }
+
+        .countdown {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Navegador Web Automático</h1>
+        
+        <div class="info-box">
+            <h3>📋 Cómo funciona:</h3>
+            <ul>
+                <li>🔗 Abre cada URL en una nueva pestaña del navegador</li>
+                <li>📜 Hace scroll automáticamente usando JavaScript</li>
+                <li>⏱️ Mantiene la pestaña abierta el tiempo configurado</li>
+                <li>🔄 Cierra automáticamente y pasa a la siguiente URL</li>
+                <li>✅ Sin problemas de CORS - funciona con cualquier sitio web</li>
+            </ul>
+        </div>
+        
+        <div class="input-section">
+            <h2>📝 Lista de URLs</h2>
+            <textarea 
+                id="urlInput" 
+                placeholder="Ingresa las URLs, una por línea:&#10;https://ejemplo1.com&#10;https://ejemplo2.com&#10;https://ejemplo3.com"
+            ></textarea>
+            <div class="help-text">
+                💡 Ingresa una URL por línea. Las URLs deben comenzar con http:// o https://
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label for="scrollDuration">📜 Duración del scroll (segundos):</label>
+                    <input type="number" id="scrollDuration" min="2" max="15" value="5">
+                </div>
+                
+                <div class="control-group">
+                    <label for="pageTime">⏳ Tiempo total en página (segundos):</label>
+                    <input type="number" id="pageTime" min="5" max="60" value="10">
+                </div>
+                
+                <div class="control-group">
+                    <label for="delayBetween">⏰ Pausa entre URLs (segundos):</label>
+                    <input type="number" id="delayBetween" min="1" max="10" value="2">
+                </div>
+                
+                <button id="startBtn">▶️ Iniciar Navegación</button>
+                <button id="pauseBtn" disabled>⏸️ Pausar</button>
+                <button id="stopBtn" disabled>⏹️ Detener</button>
+            </div>
+        </div>
+
+        <div class="status-section">
+            <div id="status" class="status idle">⚪ Listo para comenzar</div>
+            <div class="progress-container">
+                <div id="progressBar" class="progress-bar">0%</div>
+            </div>
+            <div id="currentUrl" class="current-url">Ninguna URL cargada</div>
+            <div id="countdown" class="countdown" style="display: none;">
+                <div>⏱️ Tiempo restante en página:</div>
+                <div id="timerDisplay" class="timer-display">0s</div>
+            </div>
+        </div>
+
+        <div id="urlList" class="url-list" style="display: none;"></div>
+    </div>
+
+    <script>
+        class WebNavigator {
+            constructor() {
+                this.urls = [];
+                this.currentIndex = 0;
+                this.isRunning = false;
+                this.isPaused = false;
+                this.currentWindow = null;
+                this.currentTimeout = null;
+                this.timerInterval = null;
+                this.remainingTime = 0;
+                
+                this.initElements();
+                this.bindEvents();
+            }
+
+            initElements() {
+                this.urlInput = document.getElementById('urlInput');
+                this.startBtn = document.getElementById('startBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.status = document.getElementById('status');
+                this.progressBar = document.getElementById('progressBar');
+                this.currentUrl = document.getElementById('currentUrl');
+                this.urlList = document.getElementById('urlList');
+                this.scrollDuration = document.getElementById('scrollDuration');
+                this.pageTime = document.getElementById('pageTime');
+                this.delayBetween = document.getElementById('delayBetween');
+                this.countdown = document.getElementById('countdown');
+                this.timerDisplay = document.getElementById('timerDisplay');
+            }
+
+            bindEvents() {
+                this.startBtn.addEventListener('click', () => this.start());
+                this.pauseBtn.addEventListener('click', () => this.pause());
+                this.stopBtn.addEventListener('click', () => this.stop());
+            }
+
+            parseUrls() {
+                const text = this.urlInput.value.trim();
+                if (!text) {
+                    alert('Por favor ingresa al menos una URL');
+                    return false;
+                }
+
+                this.urls = text.split('\n')
+                    .map(url => url.trim())
+                    .filter(url => url.length > 0)
+                    .filter(url => {
+                        try {
+                            new URL(url);
+                            return true;
+                        } catch {
+                            return false;
+                        }
+                    });
+
+                if (this.urls.length === 0) {
+                    alert('No se encontraron URLs válidas. Asegúrate de que comiencen con http:// o https://');
+                    return false;
+                }
+
+                return true;
+            }
+
+            renderUrlList() {
+                this.urlList.innerHTML = '';
+                this.urls.forEach((url, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'url-item';
+                    
+                    const urlText = document.createElement('span');
+                    urlText.textContent = `${index + 1}. ${url}`;
+                    
+                    const status = document.createElement('span');
+                    status.className = 'url-status';
+                    
+                    if (index < this.currentIndex) {
+                        item.classList.add('completed');
+                        status.classList.add('completed');
+                        status.textContent = '✅ Completado';
+                    } else if (index === this.currentIndex) {
+                        item.classList.add('current');
+                        status.classList.add('current');
+                        status.textContent = '🔄 Actual';
+                    } else {
+                        item.classList.add('pending');
+                        status.classList.add('pending');
+                        status.textContent = '⏳ Pendiente';
+                    }
+                    
+                    item.appendChild(urlText);
+                    item.appendChild(status);
+                    this.urlList.appendChild(item);
+                });
+                this.urlList.style.display = 'block';
+            }
+
+            start() {
+                if (!this.parseUrls()) return;
+
+                this.currentIndex = 0;
+                this.isRunning = true;
+                this.isPaused = false;
+                
+                this.updateUI();
+                this.renderUrlList();
+                this.processNextUrl();
+            }
+
+            pause() {
+                this.isPaused = !this.isPaused;
+                
+                if (this.isPaused) {
+                    this.pauseBtn.textContent = '▶️ Continuar';
+                    this.updateStatus('⏸️ Pausado', 'paused');
+                    this.clearTimers();
+                } else {
+                    this.pauseBtn.textContent = '⏸️ Pausar';
+                    this.updateStatus('🔄 Continuando...', 'running');
+                    this.processNextUrl();
+                }
+            }
+
+            stop() {
+                this.isRunning = false;
+                this.isPaused = false;
+                
+                this.clearTimers();
+                this.closeCurrentWindow();
+                
+                this.updateStatus('⚪ Detenido', 'idle');
+                this.countdown.style.display = 'none';
+                this.updateUI();
+            }
+
+            clearTimers() {
+                if (this.currentTimeout) {
+                    clearTimeout(this.currentTimeout);
+                    this.currentTimeout = null;
+                }
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+            }
+
+            closeCurrentWindow() {
+                if (this.currentWindow && !this.currentWindow.closed) {
+                    this.currentWindow.close();
+                }
+                this.currentWindow = null;
+            }
+
+            processNextUrl() {
+                if (!this.isRunning || this.isPaused || this.currentIndex >= this.urls.length) {
+                    if (this.currentIndex >= this.urls.length) {
+                        this.complete();
+                    }
+                    return;
+                }
+
+                const url = this.urls[this.currentIndex];
+                this.updateStatus(`🔄 Abriendo: ${url}`, 'running');
+                this.currentUrl.textContent = url;
+                this.updateProgress();
+                this.renderUrlList();
+                
+                // Cerrar ventana anterior si existe
+                this.closeCurrentWindow();
+                
+                // Abrir nueva ventana
+                this.currentWindow = window.open(url, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+                
+                if (!this.currentWindow) {
+                    alert('No se pudo abrir la ventana. Asegúrate de permitir pop-ups para este sitio.');
+                    this.stop();
+                    return;
+                }
+
+                // Esperar un poco para que cargue la página, luego hacer scroll
+                setTimeout(() => {
+                    if (this.isRunning && !this.isPaused) {
+                        this.startScrolling();
+                    }
+                }, 2000);
+            }
+
+            startScrolling() {
+                if (!this.isRunning || this.isPaused || !this.currentWindow || this.currentWindow.closed) {
+                    return;
+                }
+
+                this.updateStatus('📜 Haciendo scroll automático...', 'running');
+                
+                const scrollScript = `
+                    (function() {
+                        let scrollPosition = 0;
+                        const scrollAmount = 150;
+                        const scrollInterval = 500;
+                        const totalDuration = ${this.scrollDuration.value * 1000};
+                        const totalScrolls = Math.floor(totalDuration / scrollInterval);
+                        let currentScroll = 0;
+                        
+                        const scrollTimer = setInterval(() => {
+                            scrollPosition += scrollAmount;
+                            window.scrollTo({
+                                top: scrollPosition,
+                                behavior: 'smooth'
+                            });
+                            currentScroll++;
+                            
+                            if (currentScroll >= totalScrolls) {
+                                clearInterval(scrollTimer);
+                                // Scroll de vuelta hacia arriba gradualmente
+                                setTimeout(() => {
+                                    window.scrollTo({
+                                        top: 0,
+                                        behavior: 'smooth'
+                                    });
+                                }, 1000);
+                            }
+                        }, scrollInterval);
+                    })();
+                `;
+
+                try {
+                    this.currentWindow.eval(scrollScript);
+                } catch (error) {
+                    console.log('No se pudo ejecutar el script de scroll:', error);
+                }
+
+                // Iniciar countdown
+                this.startCountdown();
+            }
+
+            startCountdown() {
+                this.remainingTime = this.pageTime.value;
+                this.countdown.style.display = 'block';
+                this.updateTimer();
+                
+                this.timerInterval = setInterval(() => {
+                    this.remainingTime--;
+                    this.updateTimer();
+                    
+                    if (this.remainingTime <= 0) {
+                        clearInterval(this.timerInterval);
+                        this.moveToNext();
+                    }
+                }, 1000);
+            }
+
+            updateTimer() {
+                this.timerDisplay.textContent = `${this.remainingTime}s`;
+            }
+
+            moveToNext() {
+                this.closeCurrentWindow();
+                this.countdown.style.display = 'none';
+                
+                this.currentIndex++;
+                
+                if (this.currentIndex >= this.urls.length) {
+                    this.complete();
+                    return;
+                }
+                
+                // Pausa entre URLs
+                this.updateStatus(`⏰ Pausa de ${this.delayBetween.value}s antes de la siguiente URL...`, 'running');
+                
+                this.currentTimeout = setTimeout(() => {
+                    if (this.isRunning && !this.isPaused) {
+                        this.processNextUrl();
+                    }
+                }, this.delayBetween.value * 1000);
+            }
+
+            updateProgress() {
+                const progress = (this.currentIndex / this.urls.length) * 100;
+                this.progressBar.style.width = `${progress}%`;
+                this.progressBar.textContent = `${Math.round(progress)}%`;
+            }
+
+            updateStatus(message, className) {
+                this.status.textContent = message;
+                this.status.className = `status ${className}`;
+            }
+
+            updateUI() {
+                this.startBtn.disabled = this.isRunning;
+                this.pauseBtn.disabled = !this.isRunning;
+                this.stopBtn.disabled = !this.isRunning;
+                
+                if (!this.isRunning) {
+                    this.pauseBtn.textContent = '⏸️ Pausar';
+                }
+            }
+
+            complete() {
+                this.isRunning = false;
+                this.clearTimers();
+                this.closeCurrentWindow();
+                
+                this.updateStatus('✅ Navegación completada', 'completed');
+                this.updateProgress();
+                this.countdown.style.display = 'none';
+                this.updateUI();
+                
+                // Actualizar la lista final
+                this.renderUrlList();
+                
+                alert('🎉 ¡Navegación completada! Se visitaron todas las URLs.');
+            }
+        }
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', () => {
+            new WebNavigator();
+        });
+    </script>
+</body>
+</html>
